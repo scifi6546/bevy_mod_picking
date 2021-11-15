@@ -5,7 +5,7 @@ use bevy::{
 use bevy_mod_picking::*;
 
 fn main() {
-    App::new()
+    App::build()
         .insert_resource(WindowDescriptor {
             vsync: false, // Disabled for this demo to remove vsync as a source of input latency
             ..Default::default()
@@ -26,8 +26,8 @@ fn main() {
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(DefaultPickingPlugins)
         .insert_resource(SceneInstance::default())
-        .add_startup_system(setup)
-        .add_system(scene_update)
+        .add_startup_system(setup.system())
+        .add_system(scene_update.system())
         .run();
 }
 
@@ -52,7 +52,7 @@ fn setup(
             ..Default::default()
         })
         .insert_bundle(PickingCameraBundle::default());
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn_bundle(LightBundle {
         transform: Transform::from_xyz(3.0, 5.0, 3.0),
         ..Default::default()
     });
