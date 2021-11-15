@@ -5,7 +5,7 @@ use bevy_mod_picking::{
 };
 
 fn main() {
-    App::new()
+    App::build()
         .add_plugins(DefaultPlugins)
         // PickingPlugin provides core picking systems and must be registered first
         .add_plugin(PickingPlugin)
@@ -13,8 +13,8 @@ fn main() {
         .add_plugin(InteractablePickingPlugin)
         // HighlightablePickingPlugin adds hover, click, and selection highlighting
         .add_plugin(HighlightablePickingPlugin)
-        .add_startup_system(setup)
-        .add_system_to_stage(CoreStage::PostUpdate, print_events)
+        .add_startup_system(setup.system())
+        .add_system_to_stage(CoreStage::PostUpdate, print_events.system())
         .run();
 }
 
@@ -49,7 +49,7 @@ fn setup(
         })
         .insert_bundle(PickableBundle::default());
     // light
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn_bundle(LightBundle {
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..Default::default()
     });
