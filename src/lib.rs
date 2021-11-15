@@ -77,7 +77,7 @@ impl Default for PausedForBlockers {
     }
 }
 
-#[derive(Component, Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum UpdatePicks {
     EveryFrame(Vec2),
     OnMouseEvent,
@@ -90,120 +90,149 @@ impl Default for UpdatePicks {
 
 pub struct DefaultPickingPlugins;
 impl Plugin for DefaultPickingPlugins {
-    fn build(&self, app: &mut App) {
+    fn build(&self, app: &mut AppBuilder) {
         app.add_plugin(PickingPlugin)
             .add_plugin(InteractablePickingPlugin)
             .add_plugin(HighlightablePickingPlugin);
     }
 }
-
+fn enable_picking(state: Res<PickingPluginsState>) -> ShouldRun {
+    simple_criteria(state.enable_picking)
+}
 pub struct PickingPlugin;
 impl Plugin for PickingPlugin {
-    fn build(&self, app: &mut App) {
+    fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<PickingPluginsState>()
             .add_system_set_to_stage(
                 CoreStage::PreUpdate,
                 SystemSet::new()
-                    .with_run_criteria(|state: Res<PickingPluginsState>| {
-                        simple_criteria(state.enable_picking)
-                    })
+                    .with_run_criteria(enable_picking.system())
                     .with_system(
-                        bevy_mod_raycast::update_bound_sphere::<PickingRaycastSet>
-                            .before(PickingSystem::UpdateRaycast),
+                        bevy_mod_raycast::update_bound_sphere::<PickingRaycastSet>.system(),
                     )
-                    .with_system(update_pick_source_positions.before(PickingSystem::BuildRays))
-                    .with_system(
-                        bevy_mod_raycast::build_rays::<PickingRaycastSet>
-                            .label(PickingSystem::BuildRays)
-                            .before(PickingSystem::UpdateRaycast),
-                    )
-                    .with_system(
-                        bevy_mod_raycast::update_raycast::<PickingRaycastSet>
-                            .label(PickingSystem::UpdateRaycast),
-                    ),
+                    .before(PickingSystem::UpdateRaycast),
             );
+        app.add_system_set_to_stage(
+            CoreStage::PreUpdate,
+            SystemSet::new()
+                .with_run_criteria(enable_picking.system())
+                .with_system(update_pick_source_positions.system())
+                .before(PickingSystem::BuildRays),
+        );
+        app.add_system_set_to_stage(
+            CoreStage::PreUpdate,
+            SystemSet::new()
+                .with_run_criteria(enable_picking.system())
+                .with_system(bevy_mod_raycast::build_rays::<PickingRaycastSet>.system())
+                .before(PickingSystem::UpdateRaycast)
+                .label(PickingSystem::BuildRays),
+        );
+        app.add_system_set_to_stage(
+            CoreStage::PreUpdate,
+            SystemSet::new()
+                .with_run_criteria(enable_picking.system())
+                .with_system(bevy_mod_raycast::update_raycast::<PickingRaycastSet>.system())
+                .label(PickingSystem::BuildRays),
+        );
     }
 }
 
+fn enable_interating(state: Res<PickingPluginsState>) -> ShouldRun {
+    simple_criteria(state.enable_interacting)
+}
 pub struct InteractablePickingPlugin;
 impl Plugin for InteractablePickingPlugin {
-    fn build(&self, app: &mut App) {
+    fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<PausedForBlockers>()
             .add_event::<PickingEvent>()
             .add_system_set_to_stage(
                 CoreStage::PreUpdate,
                 SystemSet::new()
-                    .with_run_criteria(|state: Res<PickingPluginsState>| {
-                        simple_criteria(state.enable_interacting)
-                    })
-                    .with_system(
-                        pause_for_picking_blockers
-                            .label(PickingSystem::PauseForBlockers)
-                            .after(PickingSystem::UpdateRaycast),
-                    )
-                    .with_system(
-                        mesh_focus
-                            .label(PickingSystem::Focus)
-                            .after(PickingSystem::PauseForBlockers),
-                    )
-                    .with_system(
-                        mesh_selection
-                            .label(PickingSystem::Selection)
-                            .before(PickingSystem::Events)
-                            .after(PickingSystem::Focus),
-                    )
-                    .with_system(mesh_events_system.label(PickingSystem::Events)),
+                    .with_system(pause_for_picking_blockers.system())
+                    .label(PickingSystem::PauseForBlockers)
+                    .after(PickingSystem::UpdateRaycast)
+                    .with_run_criteria(enable_interating.system()),
+            )
+            .add_system_set_to_stage(
+                CoreStage::PreUpdate,
+                SystemSet::new()
+                    .with_system(mesh_focus.system())
+                    .label(PickingSystem::Focus)
+                    .after(PickingSystem::PauseForBlockers)
+                    .with_run_criteria(enable_interating.system()),
+            )
+            .add_system_set_to_stage(
+                CoreStage::PreUpdate,
+                SystemSet::new()
+                    .with_system(mesh_selection.system())
+                    .label(PickingSystem::Selection)
+                    .before(PickingSystem::Events)
+                    .after(PickingSystem::Focus)
+                    .with_run_criteria(enable_interating.system()),
+            )
+            .add_system_set_to_stage(
+                CoreStage::PreUpdate,
+                SystemSet::new()
+                    .with_system(mesh_events_system.system())
+                    .label(PickingSystem::Events)
+                    .with_run_criteria(enable_interating.system()),
             );
     }
 }
 
+fn enable_highlighting(state: Res<PickingPluginsState>) -> ShouldRun {
+    simple_criteria(state.enable_highlighting)
+}
 pub struct HighlightablePickingPlugin;
 impl Plugin for HighlightablePickingPlugin {
-    fn build(&self, app: &mut App) {
+    fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<MeshButtonMaterials>()
             .add_system_set_to_stage(
                 CoreStage::PreUpdate,
                 SystemSet::new()
-                    .with_run_criteria(|state: Res<PickingPluginsState>| {
-                        simple_criteria(state.enable_highlighting)
-                    })
-                    .with_system(
-                        get_initial_mesh_button_material
-                            .after(PickingSystem::UpdateRaycast)
-                            .before(PickingSystem::Highlighting),
-                    )
-                    .with_system(
-                        mesh_highlighting
-                            .label(PickingSystem::Highlighting)
-                            .before(PickingSystem::Events),
-                    ),
+                    .with_run_criteria(enable_highlighting.system())
+                    .with_system(get_initial_mesh_button_material.system())
+                    .after(PickingSystem::UpdateRaycast)
+                    .before(PickingSystem::Highlighting),
+            )
+            .add_system_set_to_stage(
+                CoreStage::PreUpdate,
+                SystemSet::new()
+                    .with_run_criteria(enable_highlighting.system())
+                    .with_system(mesh_highlighting.system())
+                    .label(PickingSystem::Highlighting)
+                    .before(PickingSystem::Events),
             );
     }
 }
 
+fn update_debug_cursor(state: Res<PickingPluginsState>) -> ShouldRun {
+    simple_criteria(state.update_debug_cursor)
+}
 pub struct DebugCursorPickingPlugin;
 impl Plugin for DebugCursorPickingPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_system_to_stage(
+    fn build(&self, app: &mut AppBuilder) {
+        app.add_system_set_to_stage(
             CoreStage::PreUpdate,
-            bevy_mod_raycast::update_debug_cursor::<PickingRaycastSet>
-                .with_run_criteria(|state: Res<PickingPluginsState>| {
-                    simple_criteria(state.update_debug_cursor)
-                })
+            SystemSet::new()
+                .with_system(bevy_mod_raycast::update_debug_cursor::<PickingRaycastSet>.system())
+                .with_run_criteria(update_debug_cursor.system())
                 .after(PickingSystem::UpdateRaycast),
         );
     }
 }
 
+fn print_debug_events(state: Res<PickingPluginsState>) -> ShouldRun {
+    simple_criteria(state.print_debug_events)
+}
 pub struct DebugEventsPickingPlugin;
 impl Plugin for DebugEventsPickingPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_system_to_stage(
+    fn build(&self, app: &mut AppBuilder) {
+        app.add_system_set_to_stage(
             CoreStage::PreUpdate,
-            event_debug_system
-                .with_run_criteria(|state: Res<PickingPluginsState>| {
-                    simple_criteria(state.print_debug_events)
-                })
+            SystemSet::new()
+                .with_system(event_debug_system.system())
+                .with_run_criteria(print_debug_events.system())
                 .after(PickingSystem::Events),
         );
     }
