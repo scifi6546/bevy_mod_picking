@@ -5,7 +5,7 @@ use bevy::{
 use bevy_mod_picking::*;
 
 fn main() {
-    App::new()
+    App::build()
         .insert_resource(WindowDescriptor {
             title: "bevy_mod_picking stress test".to_string(),
             width: 800.,
@@ -20,7 +20,7 @@ fn main() {
         .add_plugin(DebugCursorPickingPlugin)
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(LogDiagnosticsPlugin::default())
-        .add_startup_system(setup)
+        .add_startup_system(setup.system())
         .run();
 }
 
@@ -73,7 +73,7 @@ fn setup(
             .insert(BoundVol::default());
     }
 
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn_bundle(LightBundle {
         transform: Transform::from_matrix(Mat4::face_toward(
             Vec3::new(
                 f32::from(edge_length) * -0.55,
@@ -87,7 +87,7 @@ fn setup(
             ),
             Vec3::new(0.0, 1.0, 0.0),
         )),
-        point_light: PointLight {
+        light: Light {
             intensity: 100.0,
             range: 200.0,
             ..Default::default()
