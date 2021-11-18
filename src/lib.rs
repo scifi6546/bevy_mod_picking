@@ -124,15 +124,15 @@ impl Plugin for PickingPlugin {
             SystemSet::new()
                 .with_run_criteria(enable_picking.system())
                 .with_system(bevy_mod_raycast::build_rays::<PickingRaycastSet>.system())
-                .before(PickingSystem::UpdateRaycast)
-                .label(PickingSystem::BuildRays),
+                .label(PickingSystem::BuildRays)
+                .before(PickingSystem::UpdateRaycast),
         );
         app.add_system_set_to_stage(
             CoreStage::PreUpdate,
             SystemSet::new()
                 .with_run_criteria(enable_picking.system())
                 .with_system(bevy_mod_raycast::update_raycast::<PickingRaycastSet>.system())
-                .label(PickingSystem::BuildRays),
+                .label(PickingSystem::UpdateRaycast),
         );
     }
 }
