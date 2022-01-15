@@ -6,7 +6,7 @@ use bevy::{prelude::*, ui::FocusPolicy};
 /// # Requirements
 ///
 /// An entity with the `Hover` component must also have an [Interaction] component.
-#[derive(Debug, Copy, Clone)]
+#[derive(Component, Debug, Default, Copy, Clone)]
 pub struct Hover {
     hovered: bool,
 }
@@ -17,22 +17,17 @@ impl Hover {
     }
 }
 
-impl Default for Hover {
-    fn default() -> Self {
-        Hover { hovered: false }
-    }
-}
-
 /// Marker component for entities that, whenever their [Interaction] component is anything other
 /// than `None`, will suspend highlighting and selecting [PickableMesh]s. Bevy UI [Node]s have this
 /// behavior by default.
+#[derive(Component)]
 pub struct PickingBlocker;
 
 #[allow(clippy::type_complexity)]
 pub fn pause_for_picking_blockers(
     mut paused: ResMut<PausedForBlockers>,
     mut interactions: QuerySet<(
-        Query<
+        QueryState<
             (
                 &mut Interaction,
                 Option<&mut Hover>,
@@ -42,12 +37,12 @@ pub fn pause_for_picking_blockers(
             With<PickableMesh>,
         >,
         // UI nodes are picking blockers by default.
-        Query<&Interaction, Or<(With<Node>, With<PickingBlocker>)>>,
+        QueryState<&Interaction, Or<(With<Node>, With<PickingBlocker>)>>,
     )>,
 ) {
     for ui_interaction in interactions.q1().iter() {
         if *ui_interaction != Interaction::None {
-            for (mut interaction, hover, _, _) in interactions.q0_mut().iter_mut() {
+            for (mut interaction, hover, _, _) in &mut interactions.q0().iter_mut() {
                 if *interaction != Interaction::None {
                     *interaction = Interaction::None;
                 }

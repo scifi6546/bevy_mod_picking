@@ -7,7 +7,7 @@ use bevy::prelude::*;
 /// # Requirements
 ///
 /// An entity with the [Selection] component must also have an [Interaction] component.
-#[derive(Debug, Copy, Clone)]
+#[derive(Component, Debug, Default, Copy, Clone)]
 pub struct Selection {
     selected: bool,
 }
@@ -20,14 +20,9 @@ impl Selection {
         self.selected = selected;
     }
 }
-impl Default for Selection {
-    fn default() -> Self {
-        Selection { selected: false }
-    }
-}
 
-/// Marker struct used to mark pickable entities you don't want to trigger a deselection event when pickedy. This is useful for gizmos or other pickable UI entities.
-#[derive(Debug, Copy, Clone)]
+/// Marker struct used to mark pickable entities for which you don't want to trigger a deselection event when picked. This is useful for gizmos or other pickable UI entities.
+#[derive(Component, Debug, Copy, Clone)]
 pub struct NoDeselect;
 
 #[allow(clippy::too_many_arguments)]
@@ -57,11 +52,11 @@ pub fn mesh_selection(
 
     if keyboard_input.pressed(KeyCode::LControl) && keyboard_input.pressed(KeyCode::A) {
         // The user has hit ctrl+a, select all the things!
-        for (mut selection, _interaction) in &mut query_all.iter_mut() {
+        query_all.for_each_mut(|(mut selection, _)| {
             if !selection.selected {
                 selection.selected = true;
             }
-        }
+        });
     } else if new_selection {
         // Some pickable mesh has been clicked on - figure out what to select or deselect
         for (mut selection, interaction) in &mut query_all.iter_mut() {
