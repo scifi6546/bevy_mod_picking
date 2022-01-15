@@ -7,14 +7,14 @@ use bevy_mod_picking::{
 /// This example is identical to the 3d_scene example, except a cube has been added, that when
 /// clicked on, won't deselect everything else you have selected.
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(WindowDescriptor {
             vsync: false,
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
-        .add_plugin(DefaultPickingPlugins)
-        .add_startup_system(setup.system())
+        .add_plugin(DefaultPickingPlugins) // <- Adds Picking, Interaction, and Highlighting plugins.
+        .add_startup_system(setup)
         .run();
 }
 
@@ -52,11 +52,11 @@ fn setup(
         })
         .insert(PickableMesh::default())
         .insert(Interaction::default())
-        .insert(PickableButton::default())
+        .insert(PickableButton::<StandardMaterial>::default())
         .insert(FocusPolicy::default())
         .insert(NoDeselect);
     // light
-    commands.spawn_bundle(LightBundle {
+    commands.spawn_bundle(PointLightBundle {
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..Default::default()
     });

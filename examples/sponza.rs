@@ -5,17 +5,17 @@ use bevy::{
 use bevy_mod_picking::*;
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(WindowDescriptor {
-            vsync: false, // Disabled for this demo to remove vsync as a source of input latency
+            vsync: false, // Disabled for this demo to reduce input latency
             ..Default::default()
         })
         .insert_resource(bevy::pbr::AmbientLight {
             color: Color::WHITE,
-            brightness: 1.0 / 5.0f32,
+            brightness: 1.0 / 4.0f32,
         })
         .insert_resource(WindowDescriptor {
-            title: "bevy_mod_picking stress test".to_string(),
+            title: "bevy_mod_picking sponza test".to_string(),
             width: 800.,
             height: 600.,
             vsync: false,
@@ -26,8 +26,8 @@ fn main() {
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(DefaultPickingPlugins)
         .insert_resource(SceneInstance::default())
-        .add_startup_system(setup.system())
-        .add_system(scene_update.system())
+        .add_startup_system(setup)
+        .add_system(scene_update)
         .run();
 }
 
@@ -52,7 +52,7 @@ fn setup(
             ..Default::default()
         })
         .insert_bundle(PickingCameraBundle::default());
-    commands.spawn_bundle(LightBundle {
+    commands.spawn_bundle(PointLightBundle {
         transform: Transform::from_xyz(3.0, 5.0, 3.0),
         ..Default::default()
     });
